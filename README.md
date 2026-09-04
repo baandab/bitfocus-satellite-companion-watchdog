@@ -7,6 +7,8 @@ This repository hosts companion_watchdog.sh, an automated, high-signal monitorin
 It uses passive log auditing and proactive network orchestration. The watchdog continuously tails the server's system logs (journalctl) to intercept device disconnections. If a satellite's network socket drops, the script triggers an out-of-band HTTP webhook to the target satellite's localized webhook daemon, forcing an immediate connection recovery.  
 
 Additionally, the engine handles **automated network auto-discovery** via socket mapping and dispatches **custom-formatted email notifications** via Postfix/AWS SES if an inventory item fails to restore connection blocks within your chosen grace window.  
+
+You can also use the daily_log.sh script to get an email with the disconnects from the past 24 hours.
   
 This has only been tested on RPI with Elgato Streamdecks.  
 
@@ -166,6 +168,59 @@ WantedBy=multi-user.target
 sudo systemctl enable companion-watchdog.service
 sudo systemctl restart companion-watchdog.service  
 ```
+## Step 6: Automate the daily log to get a report
+
+If you want to get a formatted report of your disconnects, you can setup the daily_log.sh script.
+
+If will email you a summary of the disconnects/reconnects, the log from companion_watchdog.sh, the log from Bitfocus Companion.
+
+Here is a subset of the report:
+```
+Bitfocus Companion Status Summary (Last 24 Hours)
+
+Generated at: Fri Sep 4 09:42:54 AM PDT 2026
+
+=== 24-HOUR WATCHDOG METRICS SUMMARY ===
+
+TOTAL DISCONNECT EVENTS   : 28
+TOTAL RECONNECT EVENTS   : 28
+TOTAL FAILED CONNECTIONS : 0
+TOTAL EMAILS SENT        : 0
+
+--- SUB-TOTAL BREAKDOWN BY SATELLITE NODE ---
+  Satellite-1       | Disconnects: 27  | Reconnects: 27  | Failures: 0  
+  Satellite-2       | Disconnects: 0   | Reconnects: 0   | Failures: 0  
+  Satellite-3       | Disconnects: 1   | Reconnects: 1   | Failures: 0  
+```
+
+### Copy the script to your server
+
+Grab the daily_log.sh and copy it to your server.
+
+```
+sudo nano /root/bin/daily_log.sh 
+```
+
+Make it executable:
+
+```
+sudo chmod +x /root/bin/daily_log.sh 
+```
+
+### Setup a daily run, via crontab:
+
+```
+crontab -e
+```
+
+Add this to run it at 12:05 AM:
+
+```
+# m h  dom mon dow   command
+0 5 * * * /root/bin/daily_log_report.sh >/dev/null 2>&1
+```
+
+
 
 # Satellite-Side Endpoint Setup  
 
